@@ -24,6 +24,10 @@ function(app, FauxtonAPI, Config) {
   var ConfigRouteObject = FauxtonAPI.RouteObject.extend({
     layout: "one_pane",
 
+    initialize: function () {
+      this.configs = new Config.Collection();
+    },
+
     crumbs: [
       {"name": "Config","link": "_config"}
     ],
@@ -34,9 +38,9 @@ function(app, FauxtonAPI, Config) {
 
     routes: ["_config"],
 
-    views: function () {
-      this.configs = new Config.Collection();
+    defaultRoute: "config",
 
+    config: function () {
       this.setView("#dashboard-content", new Config.View({collection: this.configs}));
     },
 
@@ -46,6 +50,6 @@ function(app, FauxtonAPI, Config) {
   });
 
 
-  Config.RouteObjects = [new ConfigRouteObject()];
+  Config.RouteObjects = [ConfigRouteObject];
   return Config;
 });

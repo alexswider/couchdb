@@ -43,6 +43,14 @@ function(app, Fauxton) {
     // This should return an array of promises, an empty array, or null
     establish: function() {
       return null;
+    },
+
+    hasRendered: function () {
+      return !!this.__manager__.hasRendered;
+    },
+
+    reRender: function () {
+      this.__manager__.hasRendered = false;
     }
   });
 
@@ -60,6 +68,10 @@ function(app, Fauxton) {
 
   FauxtonAPI.addRoute = function(route) {
     app.router.route(route.route, route.name, route.callback);
+  };
+
+  FauxtonAPI.triggerRouteEvent = function (routeEvent, args) {
+    app.router.triggerRouteEvent("route:"+routeEvent, args);
   };
 
   FauxtonAPI.module = function(extra) {
@@ -96,6 +108,7 @@ function(app, Fauxton) {
     }
   });
 
+  // Not needed, could be removed.
   FauxtonAPI.routeCallChain = {
     callChain: {},
 
@@ -129,7 +142,7 @@ function(app, Fauxton) {
 
   _.extend(FauxtonAPI.RouteObject.prototype, Backbone.Events, {
     // Should these be default vals or empty funcs?
-    _views: {},
+    views: {},
     routes: {},
     events: {},
     data: {},
@@ -142,10 +155,6 @@ function(app, Fauxton) {
     route: function() {},
     initialize: function() {}
   }, {
-    // By default, rerender is a full rerender
-    rerender: function() {
-      this.renderWith.apply(this, arguments);
-    },
 
     // TODO:: combine this and the renderWith function
     // All the things should go through establish, as it will resolve
@@ -153,20 +162,17 @@ function(app, Fauxton) {
     // function can rebuild the deferred as needed
     render: function(route, masterLayout, args) {
       this.route.call(this, route, args);
-
-      if (this.renderedState === true) {
-        this.rerender.apply(this, arguments);
-      } else {
-        this.preloadViews();
-        this.renderWith.apply(this, arguments);
-      }
+      this.renderWith.apply(this, Array.prototype.slice.call(arguments));
     },
 
     renderWith: function(route, masterLayout, args) {
       var routeObject = this;
 
-      this.masterLayout = masterLayout;
-      masterLayout.setTemplate(this.layout);
+      // Only want to redo the template if its a full render
+      if (!this.renderedState) {
+        masterLayout.setTemplate(this.layout);
+      }
+
       masterLayout.clearBreadcrumbs();
       var crumbs = this.get('crumbs');
 
@@ -178,7 +184,10 @@ function(app, Fauxton) {
 
       $.when.apply(this, this.establish()).done(function(resp) {
         _.each(routeObject.getViews(), function(view, selector) {
+          if(view.hasRendered()) { console.log('view been rendered'); return; }
+
           masterLayout.setView(selector, view);
+          console.log('set and render ', selector, view); 
 
           $.when.apply(null, view.establish()).then(function(resp) {
             masterLayout.renderView(selector);
@@ -192,13 +201,11 @@ function(app, Fauxton) {
 
           var hooks = masterLayout.hooks[selector];
 
-          if(hooks){
-            _.each(hooks, function(hook){
-              if (_.any(hook.routes, function(route){return route == boundRoute;})){
-                hook.callback(view);
-              }
-            });
-          }
+          _.each(hooks, function(hook){
+            if (_.any(hook.routes, function(route){return route == boundRoute;})){
+              hook.callback(view);
+            }
+          });
         });
       });
 
@@ -206,12 +213,6 @@ function(app, Fauxton) {
 
       // Track that we've done a full initial render
       this.renderedState = true;
-    },
-
-    preloadViews: function () {
-      _.each(this.get('views'), function (view, selector) {
-        this.setView(selector, view);
-      }, this);
     },
 
     get: function(key) {
@@ -237,27 +238,18 @@ function(app, Fauxton) {
     },
 
     getView: function(selector) {
-      return this._views[selector];
+      return this.views[selector];
     },
 
     setView: function(selector, view) {
-      this._views[selector] = view;
+      this.views[selector] = view;
       return view;
     },
 
-    rerenderView: function(selector) {
-      var view = this._views[selector];
-      this.masterLayout.setView(selector, view);
-      this.masterLayout.renderView(selector);
-    },
-
     getViews: function() {
-      return this._views;
-    },
-
-    clearViews: function () {
-      this._views = {};
+      return this.views;
     }
+
   });
 
   app.fauxtonAPI = FauxtonAPI;

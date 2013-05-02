@@ -26,9 +26,10 @@ function(app, Router) {
     var routeEvent = $(this).attr("route-event");
     if (routeEvent) {
       evt.preventDefault();
-      app.router.triggerRouteEvent("route:"+routeEvent, href);
       // TODO:: change to false when route events are functional
       Backbone.history.navigate(href.attr, true);
+      // Trigger  route events after update of history so that we can get params from url
+      app.router.triggerRouteEvent("route:"+routeEvent, href);
     } else {
       // Ensure the root is part of the anchor href, meaning it's relative.
       if (href.prop && href.prop.slice(0, root.length) === root) {

@@ -30,25 +30,27 @@ function(app, FauxtonAPI, Log) {
 
     routes: ["_log"],
 
+    defaultRoute: "showLog",
+
     apiUrl: function() {
       return this.logs.url();
     },
 
-    views: function () {
+    initialize: function () {
       this.logs = new Log.Collection();
-      this.setView("#dashboard-content", new Log.Views.View({collection: this.logs}));
       this.setView("#sidebar-content", new Log.Views.FilterView({}));
     },
 
-    route: function() {
+    showLog: function (event) {
+      this.setView("#dashboard-content", new Log.Views.View({collection: this.logs}));
     },
 
-    establish: function() {
+    e1stablish: function() {
       return [this.logs.fetch()];
     }
   });
 
-  Log.RouteObjects = [new LogRouteObject()];
+  Log.RouteObjects = [LogRouteObject];
 
   return Log;
 

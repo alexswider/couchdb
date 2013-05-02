@@ -22,14 +22,18 @@ function(app, FauxtonAPI, Stats) {
     layout: "with_sidebar",
 
     routes: ["stats", "_stats"],
-    views: function () {
-      this.stats = new Stats.Collection();
+    defaultRoute: "showStats",
 
+    initialize: function () {
+      this.stats = new Stats.Collection();
 
       this.setView("#sidebar-content", new Views.StatSelect({
         collection: this.stats
       }));
 
+    },
+
+    showStats: function (event) {
       this.setView("#dashboard-content", new Views.Statistics({
         collection: this.stats
       }));
@@ -42,7 +46,7 @@ function(app, FauxtonAPI, Stats) {
     apiUrl: "_stats"
   });
 
-  Stats.RouteObjects = [new StatsRouteObject()];
+  Stats.RouteObjects = [StatsRouteObject];
 
   return Stats;
 });
