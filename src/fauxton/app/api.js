@@ -108,6 +108,48 @@ function(app, Fauxton) {
     }
   });
 
+  // This is not exposed externally as it should not need to be accessed or overridden
+  var Auth = function (options) {
+    this._options = options;
+    this.initialize.apply(this, arguments);
+  };
+
+  // Piggy-back on Backbone's self-propagating extend function,
+  Auth.extend = Backbone.Model.extend;
+
+  _.extend(Auth.prototype, Backbone.Events, {
+    initialize: function() {},
+    authDeniedCb: undefined,
+
+    authHandlerCb : function (roles, layout) {
+      var deferred = $.Deferred();
+      deferred.resolve();
+      return deferred;
+    },
+
+    registerAuth: function (authHandlerCb) {
+      this.authHandlerCb = authHandlerCb;
+    },
+
+    registerAuthDenied: function (authDeniedCb) {
+      this.authDeniedCb = authDeniedCb;
+    },
+
+    checkAccess: function (roles, layout) {
+      var requiredRoles = roles || [],
+          authDeniedCb = this.authDeniedCb,
+          promise = $.when.apply(null, this.authHandlerCb(requiredRoles, layout));
+
+      if (authDeniedCb) { 
+        promise.fail(function () { authDeniedCb(layout);});
+      }
+
+      return promise;
+    }
+  });
+
+  FauxtonAPI.auth = new Auth();
+
   FauxtonAPI.RouteObject = function(options) {
     this._options = options;
 
@@ -133,6 +175,7 @@ function(app, Fauxton) {
     renderedState: false,
     establish: function() {},
     route: function() {},
+    roles: [],
     initialize: function() {}
   }, {
 
@@ -248,7 +291,23 @@ function(app, Fauxton) {
 
     routeCallback: function (route) {
       var routes = this.get('routes');
-      return this[routes[route]];
+      var routeObj = routes[route];
+
+      if (typeof routeObj === 'object') {
+        return this[routeObj.route];
+      } else {
+        return this[routeObj];
+      }
+    },
+
+    getRouteRoles: function (routeUrl) {
+      var route = this.get('routes')[routeUrl];
+
+      if ((typeof route === 'object') && route.roles) {
+       return route.roles; 
+      }
+
+      return this.roles;
     }
 
   });
