@@ -175,7 +175,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       "database/:database/_all_docs(:extra)": "allDocs", 
       "database/:database/_design/:ddoc/_view/:view": {
         route: "viewFn",
-        roles: ['admin']
+        roles: ['_admin']
       },
       "database/:database/new_view": "newViewEditor"
     },

@@ -67,7 +67,7 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
               routeCallback = routeObject.routeCallback(route),
               roles = routeObject.getRouteRoles(route);
 
-          var authPromise = app.auth.checkAccess(roles, masterLayout);
+          var authPromise = app.auth.checkAccess(roles);
 
           authPromise.then(function () {
             routeCallback.apply(routeObject, args);
@@ -111,7 +111,6 @@ function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents
     },
 
     initialize: function() {
-      console.log('HI ROUTS');
       //TODO: It would be nice to handle this with a router
       this.navBar = app.navBar = new Fauxton.NavBar();
       this.apiBar = app.apiBar = new Fauxton.ApiBar();

@@ -118,8 +118,19 @@ function(app, Fauxton) {
   Auth.extend = Backbone.Model.extend;
 
   _.extend(Auth.prototype, Backbone.Events, {
-    initialize: function() {},
-    authDeniedCb: undefined,
+    authDeniedCb: function() {},
+
+    initialize: function() {
+      var self = this;
+
+      $(document).ajaxError(function(event, jqxhr, settings, exception) {
+        console.log("UNAUTH");
+        console.log(arguments);
+        if (exception === "Unauthorized" || exception === "Forbidden") {
+          self.authDeniedCb();
+        }
+      });
+    },
 
     authHandlerCb : function (roles, layout) {
       var deferred = $.Deferred();
@@ -135,14 +146,12 @@ function(app, Fauxton) {
       this.authDeniedCb = authDeniedCb;
     },
 
-    checkAccess: function (roles, layout) {
+    checkAccess: function (roles) {
       var requiredRoles = roles || [],
           authDeniedCb = this.authDeniedCb,
-          promise = $.when.apply(null, this.authHandlerCb(requiredRoles, layout));
+          promise = $.when.apply(null, this.authHandlerCb(requiredRoles));
 
-      if (authDeniedCb) { 
-        promise.fail(function () { authDeniedCb(layout);});
-      }
+      promise.fail(function () { authDeniedCb();});
 
       return promise;
     }

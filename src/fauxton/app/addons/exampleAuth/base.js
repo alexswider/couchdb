@@ -30,10 +30,10 @@ function(app, FauxtonAPI) {
   // The roles argument that is passed in is the required roles for the current user
   // to be allowed to access the current page.
   // The layout is the main layout for use when you want to render a view onto the page
-  var auth = function (roles, layout) {
+  var auth = function (roles) {
     var deferred = $.Deferred();
 
-    if (roles.indexOf('admin') > -1) {
+    if (roles.indexOf('_admin') > -1) {
       deferred.reject();
     } else {
       deferred.resolve();
@@ -44,9 +44,9 @@ function(app, FauxtonAPI) {
 
   // If you would like to do something with when access is denied you can register this callback.
   // It will be called is access has been denied on the previous page.
-  var authFail = function (layout) {
-    layout.setView('#dashboard', new noAccessView());
-    layout.renderView('#dashboard');
+  var authFail = function () {
+    app.masterLayout.setView('#dashboard', new noAccessView());
+    app.masterLayout.renderView('#dashboard');
   };
 
   // Register the auth call back. This will be called before new route rendered
